@@ -124,11 +124,18 @@ def load_from_bytes(xls_bytes: bytes):
 
     # Ensure Date exists (fallback: Day -> string) to avoid missing cols downstream
     if "Date" not in dispatch_lg.columns and "Day" in dispatch_lg.columns:
-        dispatch_lg["Date"] = dispatch_lg["Day"].apply(lambda d: pd.NaT if pd.isna(d) else pd.to_datetime(int(d), unit='D', origin='1970-01-01').date())
+        dispatch_lg["Date"] = dispatch_lg["Day"].apply(lambda d: pd.NaT if pd.isna(d) else str(int(d)))
     if "Date" not in dispatch_cg.columns and "Day" in dispatch_cg.columns:
-        dispatch_cg["Date"] = dispatch_cg["Day"].apply(lambda d: pd.NaT if pd.isna(d) else pd.to_datetime(int(d), unit='D', origin='1970-01-01').date())
+        dispatch_cg["Date"] = dispatch_cg["Day"].apply(lambda d: pd.NaT if pd.isna(d) else str(int(d)))
     if "Date" not in stock_levels.columns and "Day" in stock_levels.columns:
-        stock_levels["Date"] = stock_levels["Day"].apply(lambda d: pd.NaT if pd.isna(d) else pd.to_datetime(int(d), unit='D', origin='1970-01-01').date())
+        stock_levels["Date"] = stock_levels["Day"].apply(lambda d: pd.NaT if pd.isna(d) else str(int(d)))
+
+    # Category columns may be missing if old outputs were used; ensure they exist
+    for col in ("AAY_tons","PHH_tons","APL_tons","NFSA_tons"):
+        if col not in dispatch_lg.columns:
+            dispatch_lg[col] = 0.0
+        if col not in dispatch_cg.columns:
+            dispatch_cg[col] = 0.0
 
     # FPS monthly demand: compute from counts if provided (app1 already does this, but be tolerant)
     for col in ("AAY_Count","PHH_Beneficiaries","APL_Count"):
@@ -183,8 +190,10 @@ def load_from_bytes(xls_bytes: bytes):
     if not fps_src.empty and "Day" in fps_src.columns:
         fps_src = fps_src[pd.notna(fps_src["Day"])]
         fps_agg = fps_src.groupby(["Day", "Entity_ID"], as_index=False)["Stock_Level_tons"].sum()
-        fps_stock = fps_agg.merge(fps[["FPS_ID","Reorder_Threshold_tons"]],
-                                  left_on="Entity_ID", right_on="FPS_ID", how="left')
+        fps_stock = fps_agg.merge(
+            fps[["FPS_ID", "Reorder_Threshold_tons"]],
+            left_on="Entity_ID", right_on="FPS_ID", how="left"
+        )
         fps_stock["At_Risk"] = fps_stock["Stock_Level_tons"] <= fps_stock["Reorder_Threshold_tons"]
     else:
         fps_stock = pd.DataFrame(columns=["Day","Entity_ID","Stock_Level_tons","FPS_ID","Reorder_Threshold_tons","At_Risk"])
