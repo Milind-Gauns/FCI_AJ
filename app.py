@@ -1,4 +1,3 @@
-import datetime
 import time
 import streamlit as st
 import pandas as pd
@@ -254,78 +253,9 @@ with st.sidebar:
     min_day = int(pd.concat([day_totals_cg["Day"], day_totals_lg["Day"]], ignore_index=True).min()) if not day_totals_cg.empty or not day_totals_lg.empty else 1
     max_day = int(pd.concat([day_totals_cg["Day"], day_totals_lg["Day"]], ignore_index=True).max()) if not day_totals_cg.empty or not day_totals_lg.empty else DAYS
 
-    day_range = (min_day, max_day)
-        
-    # Choose project start date
-    start_date = st.date_input("Select project start date", datetime.date.today())
-
-    # Select additional holidays
-    extra_holidays = st.multiselect(
-        "Choose extra holidays",
-        [start_date + datetime.timedelta(days=i) for i in range(90)],  # next 3 months
-        format_func=lambda x: x.strftime("%a %d-%b-%Y")
-    )
-
-    # -------------------------------
-    # 2) Generate working-day calendar
-    # -------------------------------
-    def generate_day_map(start_date, min_day, max_day, extra_holidays):
-        """
-        Returns mapping: day_number -> calendar_date
-        Skips weekends and extra holidays.
-        """
-        day_map = {}
-        current_date = start_date
-        day_num = min_day
-
-        # Move backwards if min_day < 0
-        while day_num < 0:
-            current_date -= datetime.timedelta(days=1)
-            if current_date.weekday() < 5 and current_date not in extra_holidays:  # valid day
-                day_map[day_num] = current_date
-                day_num += 1
-
-        # Reset to start_date for forward loop
-        current_date = start_date
-        day_num = 0
-        while day_num <= max_day:
-            if current_date.weekday() < 5 and current_date not in extra_holidays:
-                day_map[day_num] = current_date
-                day_num += 1
-            current_date += datetime.timedelta(days=1)
-
-        return day_map
-
-    day_map = generate_day_map(start_date, min_day, max_day, extra_holidays)
-
-    # -------------------------------
-    # 3) Show results
-    # -------------------------------
-    # Show the calendar date for max_day
-    st.success(f"Day {max_day} → {day_map[max_day].strftime('%a %d-%b-%Y')}")
-
-    # -------------------------------
-    # 4) Select a date range instead of single date
-    # -------------------------------
-    date_range = st.date_input(
-        "Select working date range",
-        [day_map[min_day], day_map[max_day]]  # default full range
-    )
-
-    if isinstance(date_range, tuple) and len(date_range) == 2:
-        start_sel, end_sel = date_range
-        rev_map = {v: k for k, v in day_map.items()}
-
-        # Find closest mapped days inside the range
-        start_day = rev_map.get(start_sel)
-        end_day = rev_map.get(end_sel)
-
-        if start_day is not None and end_day is not None:
-            day_range = (start_day, end_day)
-            st.success(f"You selected Day {start_day} → {start_sel}  to  Day {end_day} → {end_sel}")
-        else:
-            st.error("Selected dates include weekends or holidays (not mapped).")
-
+    day_range = st.slider("Dispatch Window (days)",
+                          min_value=min_day, max_value=max_day,
+                          value=(min_day, max_day), format="%d")
 
     st.subheader("Select LGs")
 
