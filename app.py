@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from datetime import date
 
-st.set_page_config(page_title="Grain Distribution Dashboard", layout="wide")
-st.title("🚛 Grain Distribution Dashboard")
+st.set_page_config(page_title="Food Grain Distribution Dashboard", layout="wide")
+st.title("🚛 Food Grain Distribution Dashboard")
 
 # ------------------------
 # Helpers
@@ -629,3 +629,4 @@ with tab8:
     st.write(f"FPS stock on hand at window end: {fps_onhand:.1f} t")
     st.write(f"LG capacity filled (selected LGs): {pct_lg_filled:.1f}%")
     st.write(f"FPS stock-outs at end: {fps_zero}  |  FPS at-risk: {fps_risk}")
+
